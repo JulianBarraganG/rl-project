@@ -1,27 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import constants from '../../../config/constants.json';
+
 
 export default function Home() {
   const [gameStarted, setGameStarted] = useState(false);
   const [scaleFactor, setScaleFactor] = useState(1);
-  const [gameState, setGameState] = useState({
-    score: {
-      machine: 0,
-      human: 0
-    },
-    // Add other game state properties as needed
-    ball: { x: 0, y: 0 },
-    paddles: { machine: 0, human: 0 }
-  });
+  const [gameState, setGameState] = useState({});
 
-  const gameWidth = 60;
-  const gameHeight = 45;
 
   const startGame = () => {
     setGameStarted(true);
     //Call the backend API to get start position of the ball and paddles 
-    //Let's simulate this for now 
+    //Let's simulate this for now
+    //These numbers are just for testing
     const setGameStateWithStartPosition = () => {
       setGameState({
         ...gameState,
@@ -47,11 +40,11 @@ export default function Home() {
 
   useEffect(() => {
     const calculateScale = () => {
-      const availableWidth = window.innerWidth-40; // Account for padding
-      const availableHeight = window.innerHeight -200; // Account for UI elements
+      const availableWidth = window.innerWidth-constants.UI_HORIZONTAL_PADDING; // Account for UI elements
+      const availableHeight = window.innerHeight -constants.UI_VERTICAL_PADDING; // Account for UI elements
 
-      const widthScale = Math.floor(availableWidth / gameWidth);
-      const heightScale = Math.floor(availableHeight / gameHeight);
+      const widthScale = Math.floor(availableWidth / constants.GAME_WIDTH);
+      const heightScale = Math.floor(availableHeight / constants.GAME_HEIGHT);
       
       // Use the smaller scale, but ensure at least 1x
       setScaleFactor(Math.max(Math.min(widthScale, heightScale), 1));
@@ -62,24 +55,32 @@ export default function Home() {
     window.addEventListener('resize', calculateScale);
     
     return () => window.removeEventListener('resize', calculateScale);
-  }, [gameWidth, gameHeight]);
+  }, [constants.GAME_WIDTH, constants.GAME_HEIGHT]);
 
   // Calculate actual pixel dimensions
-  const displayWidth = gameWidth * scaleFactor;
-  const displayHeight = gameHeight * scaleFactor;
+  const displayWidth = constants.GAME_WIDTH * scaleFactor;
+  const displayHeight = constants.GAME_HEIGHT * scaleFactor;
 
    return (
-    <div className={`flex min-h-screen bg-black ${!gameStarted ? 'items-center justify-center' : ''}`}>
-      <main className={`flex min-h-screen w-full flex-col items-center px-16 bg-black ${!gameStarted ? 'justify-center' : 'justify-start pt-8'}`}> 
+    <div
+      className={`flex min-h-screen ${!gameStarted ? 'items-center justify-center' : ''}`}
+      style={{ backgroundColor: constants.PAGE_BACKGROUND_COLOR }}
+    >
+      <main
+        className={`flex min-h-screen w-full flex-col items-center px-16 ${!gameStarted ? 'justify-center' : 'justify-start pt-8'}`}
+        style={{ backgroundColor: constants.PAGE_BACKGROUND_COLOR }}
+      > 
         {!gameStarted ? (
           // Welcome Screen (disappears when button is clicked)
           <div className="flex flex-col items-center gap-8 text-center">
-            <h1 className="text-6xl font-bold tracking-wider text-[#149414] font-mono drop-shadow-[0_0_8px_rgba(45,200,30,0.6)]">
+            <h1 className={`text-6xl font-bold tracking-wider font-mono`}
+            style={{color: constants.TEXT_COLOR}}>
               Welcome to the pong game
             </h1>
             <button 
               onClick={startGame}
-              className="px-12 py-4 bg-[#149414] text-black font-bold text-2xl rounded-lg mt-8 shadow-[0_0_12px_rgba(14,107,14,0.7)] hover:bg-[#1db31d] hover:shadow-[0_0_16px_rgba(45,200,30,0.8)] transition-all duration-200 font-mono"
+              className={`px-12 py-4 font-bold text-2xl rounded-lg mt-8 transition-all duration-200 font-mono`}
+              style={{backgroundColor: constants.TEXT_COLOR, color: constants.PAGE_BACKGROUND_COLOR}}
             >
               PLAY
             </button>
@@ -89,32 +90,36 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center w-full">
             {/* Score at the top */}
             <div className="py-4 text-center w-full">
-              <h2 className="text-6xl font-bold text-[#149414] font-mono drop-shadow-[0_0_8px_rgba(45,200,30,0.6)]">
+              <h2 
+              className={`text-6xl font-bold font-mono`}
+              style={{color: constants.TEXT_COLOR}}>
                 {gameState.score.machine} : {gameState.score.human}
               </h2>
             </div>
             
-           {/* Game view using gameWidth and gameHeight */}
+           {/* Game view using constants.GAME_WIDTH and constants.GAME_HEIGHT */}
 <div 
-  className="bg-gray-900 relative" 
+  className={`relative`} 
   style={{ 
     width: `${displayWidth}px`, 
     height: `${displayHeight}px`, 
     imageRendering: 'pixelated',
+    backgroundColor: constants.GAME_BACKGROUND_COLOR,
   }}
 >
 
 {/* Center line - dashed */}
-  {Array.from({ length: gameHeight}).map((_, i) => (
+  {Array.from({ length: constants.GAME_HEIGHT}).map((_, i) => (
     i % 2 === 0 && (
       <div
         key={i}
-        className="absolute bg-[#149414]"
+        className={`absolute`}
         style={{
-          left: `${(gameWidth / 2) * scaleFactor - scaleFactor/2}px`,
+          left: `${(constants.GAME_WIDTH / 2) * scaleFactor - scaleFactor/2}px`,
           top: `${i * scaleFactor}px`,
           width: `${scaleFactor}px`,
           height: `${scaleFactor}px`,
+          backgroundColor: constants.TEXT_COLOR,
         }}
       />
     )
@@ -122,34 +127,37 @@ export default function Home() {
 
    {/* Left paddle */}
   <div
-    className="absolute bg-[#149414]"
+    className={`absolute`}
     style={{
-      left: `${2 * scaleFactor}px`,
+      left: `${constants.PADDLE_OFFSET * scaleFactor}px`,
       top: `${gameState.machinePaddle.y * scaleFactor}px`,
-      width: `${1 * scaleFactor}px`,
-      height: `${8 * scaleFactor}px`,
+      width: `${constants.PADDLE_WIDTH * scaleFactor}px`,
+      height: `${constants.PADDLE_HEIGHT * scaleFactor}px`,
+      backgroundColor: constants.TEXT_COLOR,
     }}
   />
   
   {/* Right paddle */}
   <div
-    className="absolute bg-[#149414]"
+    className={`absolute`}
     style={{
-      right: `${2 * scaleFactor}px`,
+      right: `${constants.PADDLE_OFFSET * scaleFactor}px`,
       top: `${gameState.humanPaddle.y * scaleFactor}px`,
-      width: `${1 * scaleFactor}px`,
-      height: `${8 * scaleFactor}px`,
+      width: `${constants.PADDLE_WIDTH * scaleFactor}px`,
+      height: `${constants.PADDLE_HEIGHT * scaleFactor}px`,
+      backgroundColor: constants.TEXT_COLOR,
     }}
   />
   
   {/* Ball */}
   <div
-    className="absolute bg-[#149414]"
+    className={`absolute`}
     style={{
       left: `${gameState.ball.x * scaleFactor - scaleFactor/2}px`,
       top: `${gameState.ball.y * scaleFactor}px`,
-      width: `${1 * scaleFactor}px`,
-      height: `${1 * scaleFactor}px`,
+      width: `${constants.BALL_SIZE * scaleFactor}px`,
+      height: `${constants.BALL_SIZE * scaleFactor}px`,
+      backgroundColor: constants.TEXT_COLOR,
     }}
   />
 </div>          </div>
@@ -157,4 +165,4 @@ export default function Home() {
       </main>
     </div>
   );
-} 
+}
