@@ -72,7 +72,7 @@ class Pong():
         # Add slight scale withing +/- 45 degrees
         self.ball_heading = self.ball_heading + np.random.uniform(-45., 45.)
         # Avoid perfect vertical angles (perfect reflection edge case)
-        if self.ball_heading == 0. or self.ball_heading == 180.:
+        if abs(self.ball_heading) < 1e-9 or abs(self.ball_heading - 180.) < 1e-9:
             self.ball_heading = self.ball_heading + 10.
         self.dirvector = np.array([
                 np.cos(np.radians(self.ball_heading)),
