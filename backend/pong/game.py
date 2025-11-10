@@ -89,7 +89,7 @@ class Pong():
         """
         assert normal_dir in self.normal.keys(), "Normal direction must be one of 'top', 'bottom', 'left', 'right'."
         normal = self.normal[normal_dir]
-        self.dirvector =  self.dirvector - 2*np.dot(self.dirvector, normal)*normal
+        self.dirvector = self.dirvector - 2*np.dot(self.dirvector, normal)*normal
 
     def move_paddle(self, human: bool, dir: int) -> None:
         """
