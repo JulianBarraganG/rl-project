@@ -69,7 +69,7 @@ class Pong():
         self.ball.x = CANVAS_WIDTH // 2
         # Start the ball orthogonally to either left or right paddle
         self.ball_heading = 0. if np.random.randint(0, 2) == 1 else 180.
-        # Add slight scale withing +/- 45 degrees
+        # Add slight scale within +/- 45 degrees
         self.ball_heading = self.ball_heading + np.random.uniform(-45., 45.)
         # Avoid perfect vertical angles (perfect reflection edge case)
         if abs(self.ball_heading) < 1e-9 or abs(self.ball_heading - 180.) < 1e-9:
