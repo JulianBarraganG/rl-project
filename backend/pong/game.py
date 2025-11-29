@@ -31,22 +31,22 @@ class Pong():
     """Class representing the Pong game state and logic."""
     def __init__(self) -> None:
         self.const: dict[str, int] = self._load_constants()
-        self.init_agent_pos: tuple[int, int] = (
+        self.init_human_pos: tuple[int, int] = (
             self.const["PADDLE_WIDTH"],
             self.const["GAME_HEIGHT"] // 2
         )
-        self.init_human_pos: tuple[int, int] = (
-            self.const["GAME_WIDTH"] - self.const["HORIZONTAL_PADDING"] - self.const["PADDLE_WIDTH"],
+        self.init_agent_pos: tuple[int, int] = (
+            self.const["GAME_WIDTH"] - self.const["PADDLE_OFFSET"] - self.const["PADDLE_WIDTH"],
             self.const["GAME_HEIGHT"] // 2,
         )
-        self.agent: Paddle = Paddle(*self.init_agent_pos)
         self.human: Paddle = Paddle(*self.init_human_pos)
+        self.agent: Paddle = Paddle(*self.init_agent_pos)
         self.paddle_speed: int = self.const["PADDLE_VELOCITY"]
         self.ball: Ball = Ball()
         self.ball_speed: int = self.const["BALL_VELOCITY"]
         self.ball_heading: float
         self.dirvector: np.ndarray
-        self.score: dict[str, int] = {"agent": 0, "human": 0}
+        self.score: dict[str, int] = {"human": 0, "agent": 0}
         self.winning_score: int = 3
         self.normal: dict[str, np.ndarray] = {
                 "top": np.array([0., 1.]),
@@ -95,14 +95,14 @@ class Pong():
         normal = self.normal[normal_dir]
         self.dirvector = self.dirvector - 2*np.dot(self.dirvector, normal)*normal
 
-    def move_paddle(self, agent: bool, dir: int) -> None:
+    def move_paddle(self, human: bool, dir: int) -> None:
         """
         Move the paddle up or down.
 
         Parameters
         ----------
-        agent : bool
-            If True, move the agent paddle. If False, move the human paddle.
+        human : bool
+            If True, move the human paddle. If False, move the agent paddle.
         dir : int
             Direction to move the paddle. -1 for up, 1 for down.
 
@@ -111,7 +111,7 @@ class Pong():
         I tried to do cool smart logic, but it didn't work. Did bare minimum viable product instead.
         """
         assert dir == -1 or dir == 1, "Up and down should be given by -1 and 1 respectively."
-        player = self.agent if agent else self.human
+        player = self.human if human else self.agent
 
         min_y = self.const["PADDLE_HEIGHT"] // 2
         max_y = self.const["GAME_HEIGHT"] - (self.const["PADDLE_HEIGHT"] // 2)
@@ -133,16 +133,16 @@ class Pong():
             top_half = paddle_y - self.const["PADDLE_HEIGHT"] // 2
             bottom_half = paddle_y + self.const["PADDLE_HEIGHT"] // 2
             return top_half <= ball_y <= bottom_half
-        hitting_agent_paddle = within_paddle_bound(self.ball.y, self.agent.y) and \
-                            self.ball.x <= self.agent.x + self.const["PADDLE_WIDTH"] + self.const["BALL_SIZE"]
         hitting_human_paddle = within_paddle_bound(self.ball.y, self.human.y) and \
-                            self.ball.x >= self.human.x - self.const["BALL_SIZE"]
-        hitting_paddle = hitting_human_paddle or hitting_agent_paddle
+                            self.ball.x <= self.human.x + self.const["PADDLE_WIDTH"] + self.const["BALL_SIZE"]
+        hitting_agent_paddle = within_paddle_bound(self.ball.y, self.agent.y) and \
+                            self.ball.x >= self.agent.x - self.const["BALL_SIZE"]
+        hitting_paddle = hitting_agent_paddle or hitting_human_paddle
 
         # Compute new direction vectors for each of 4 cases, only one per frame
-        if hitting_human_paddle:
+        if hitting_agent_paddle:
             self._update_direction_vector("left")
-        elif hitting_agent_paddle:
+        elif hitting_human_paddle:
             self._update_direction_vector("right")
         elif hitting_top and not hitting_paddle:
             self._update_direction_vector("top")
@@ -151,24 +151,24 @@ class Pong():
 
         # Handle scoring
         scored_left = self.ball.x <= (
-            self.const["HORIZONTAL_PADDING"] + self.const["PADDLE_WIDTH"]
+            self.const["PADDLE_OFFSET"] + self.const["PADDLE_WIDTH"]
         ) and not hitting_paddle
         scored_right = self.ball.x >= (
-            self.const["GAME_WIDTH"] - (self.const["HORIZONTAL_PADDING"] + self.const["PADDLE_WIDTH"])
+            self.const["GAME_WIDTH"] - (self.const["PADDLE_OFFSET"] + self.const["PADDLE_WIDTH"])
         ) and not hitting_paddle
         if scored_left or scored_right:
-            logger.info(f"Score update! Human: {self.score['human']} | Agent: {self.score['agent']}")
+            logger.info(f"Score update! Agent: {self.score['agent']} | Human: {self.score['human']}")
             # Update scores
             if scored_left:
-                self.score["human"] += 1
-                scored_by = "human"
-            else:
                 self.score["agent"] += 1
                 scored_by = "agent"
+            else:
+                self.score["human"] += 1
+                scored_by = "human"
 
             # Update paddle positions
-            self.agent.y = self.init_agent_pos[1]
             self.human.y = self.init_human_pos[1]
+            self.agent.y = self.init_agent_pos[1]
             self._get_ball_start_position()
 
             # Check for game over
