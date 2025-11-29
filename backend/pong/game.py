@@ -73,10 +73,10 @@ class Pong():
         self.ball.x = self.const["GAME_WIDTH"] // 2
         # Start the ball orthogonally to either left or right paddle
         self.ball_heading = 0. if np.random.randint(0, 2) == 1 else 180.
-        # Add slight scale withing +/- 45 degrees
+        # Add slight scale within +/- 45 degrees
         self.ball_heading = self.ball_heading + np.random.uniform(-45., 45.)
         # Avoid perfect vertical angles (perfect reflection edge case)
-        if self.ball_heading == 0. or self.ball_heading == 180.:
+        if abs(self.ball_heading) < 1e-9 or abs(self.ball_heading - 180.) < 1e-9:
             self.ball_heading = self.ball_heading + 10.
         self.dirvector = np.array([
                 np.cos(np.radians(self.ball_heading)),
@@ -93,7 +93,7 @@ class Pong():
         """
         assert normal_dir in self.normal.keys(), "Normal direction must be one of 'top', 'bottom', 'left', 'right'."
         normal = self.normal[normal_dir]
-        self.dirvector =  self.dirvector - 2*np.dot(self.dirvector, normal)*normal
+        self.dirvector = self.dirvector - 2*np.dot(self.dirvector, normal)*normal
 
     def move_paddle(self, agent: bool, dir: int) -> None:
         """
@@ -139,15 +139,15 @@ class Pong():
                             self.ball.x >= self.human.x - self.const["BALL_SIZE"]
         hitting_paddle = hitting_human_paddle or hitting_agent_paddle
 
-        # Compute new direction vectors for each of 4 cases
-        if hitting_top and not hitting_paddle:
-            self._update_direction_vector("top")
-        if hitting_bottom and not hitting_paddle:
-            self._update_direction_vector("bottom")
-        if hitting_agent_paddle:
-            self._update_direction_vector("left")
+        # Compute new direction vectors for each of 4 cases, only one per frame
         if hitting_human_paddle:
+            self._update_direction_vector("left")
+        elif hitting_agent_paddle:
             self._update_direction_vector("right")
+        elif hitting_top and not hitting_paddle:
+            self._update_direction_vector("top")
+        elif hitting_bottom and not hitting_paddle:
+            self._update_direction_vector("bottom")
 
         # Handle scoring
         scored_left = self.ball.x <= (
